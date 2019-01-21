@@ -36,3 +36,6 @@ Bash scripts
 
 TXT-Files
 *.txt
+
+Python scripts
+*.py
