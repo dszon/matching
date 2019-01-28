@@ -5,7 +5,7 @@ CC = g++
 CFLAGS  = -Wall -Wno-c++11-extensions
 
 # the build target executable:
-TARGET = matching
+TARGET = matching_0.2
 
 all: $(TARGET)
 

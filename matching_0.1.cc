@@ -106,10 +106,9 @@ void showGraph(t_nodelist* nodesp, int bound)
 }
 
 // ---------------------------------------------
-void writeMatching(t_edgelist* edgesp)
+void writeMatching(t_edgelist &edges)
 // ---------------------------------------------
 {
-  t_edgelist edges = *edgesp;
   ofstream out;
   out.open ("graph_matching.txt");
   for (unsigned int i = 0; i < edges.size(); i++) {
@@ -121,7 +120,7 @@ void writeMatching(t_edgelist* edgesp)
 }
 
 // ---------------------------------------------
-void progressBar (double progress)
+void progressBar (float progress)
 // ---------------------------------------------
 {
   // cout << progress << " %\r";
@@ -136,8 +135,7 @@ void progressBar (double progress)
     else if (i == pos) cout << ">";
     else cout << " ";
   }
-  cout << "] " << int(progress * 100.0) << " %\r";
-  cout.flush();
+  cout << "] " << int(progress * 100.0) << " %\r" << flush;
 }
 
 // ---------------------------------------------
@@ -163,13 +161,13 @@ edge* isEdgeUnchecked(edge* ABp,unsigned int pos)
 }
 
 // ---------------------------------------------
-void try_match(edge* ABp, t_edgelist* edgesp, double* progressp)
+void try_match(edge* ABp, t_edgelist &edges, double &progress)
 // ---------------------------------------------
 {
   t_edgelist Ca, Cb;
-  t_edgelist edges = *edgesp;
+  float progress = 1 - (float)(unchckd.size())/edges.size();
   if (rand01() > .9) {
-    progressBar(*progressp/edges.size());
+    progressBar(progress);
   }
 
   edge*      aXp   = isEdgeUnchecked(ABp,0);
@@ -178,20 +176,20 @@ void try_match(edge* ABp, t_edgelist* edgesp, double* progressp)
   while (((ABp->a->inM == matchingStatus::free) && (ABp->b->inM == matchingStatus::free)) && ((aXp != NULL) || (bXp != NULL))) {
 
     if ((ABp->a->inM == matchingStatus::free) and (aXp != NULL)) {
-      if (aXp->inU == checkStatus::unchecked) *progressp += 1;
+      if (aXp->inU == checkStatus::unchecked) progress += 1;
       aXp->inU = checkStatus::checked;
       Ca.push_back(aXp);
       if (aXp->weight > ABp->weight) {
-        try_match(aXp, edgesp, progressp);
+        try_match(aXp, edges, progress);
       }
     }
 
     if ((ABp->b->inM == matchingStatus::free) and (bXp != NULL)) {
-      if (bXp->inU == checkStatus::unchecked) *progressp += 1;
+      if (bXp->inU == checkStatus::unchecked) progress += 1;
       bXp->inU = checkStatus::checked;
       Cb.push_back(bXp);
       if (bXp->weight > ABp->weight) {
-        try_match(bXp, edgesp, progressp);
+        try_match(bXp, edges, progress);
       }
     }
 
@@ -206,30 +204,29 @@ void try_match(edge* ABp, t_edgelist* edgesp, double* progressp)
     for (unsigned int i=0; i < Cb.size(); i++) { // make edges from Cb with matchingStatus::free at end != b unchecked
       if (((Cb[i]->a == ABp->b) && (Cb[i]->b->inM == matchingStatus::free)) || ((Cb[i]->b == ABp->b) && (Cb[i]->a->inM == matchingStatus::free))) {
         Cb[i]->inU = checkStatus::unchecked;
-        *progressp -= 1;
+        progress -= 1;
       }
     }
   } else if ((ABp->a->inM == matchingStatus::free) && (ABp->b->inM == matchingStatus::matched)) {
     for (unsigned int i=0; i < Ca.size(); i++) { // make edges from Ca with matchingStatus::free at end != a unchecked
       if (((Ca[i]->a == ABp->a) && (Ca[i]->b->inM == matchingStatus::free)) || ((Ca[i]->b == ABp->a) && (Ca[i]->a->inM == matchingStatus::free))) {
         Ca[i]->inU = checkStatus::unchecked;
-        *progressp -= 1;
+        progress -= 1;
       }
     }
   } else /* a and b have matchingStatus::free */ {
     ABp->a->inM = matchingStatus::matched;
     ABp->b->inM = matchingStatus::matched;
     ABp->inM    = matchingStatus::matched;
-    ABp->inU    = checkStatus::checked;
-    *progressp += 1;
+    progress += 1;
   }
+  ABp->inU    = checkStatus::checked;
 }
 
 // ---------------------------------------------
-int pickUncheckedEdgeIndex(t_edgelist* edgesp, int u)
+int pickUncheckedEdgeIndex(t_edgelist &edges, int u)
 // ---------------------------------------------
 {
-  t_edgelist edges = *edgesp;
   int i = (u+1)%edges.size();
   while (i != u) {
     if (edges[i]->inU == checkStatus::unchecked) {
@@ -295,11 +292,11 @@ int main(int argc, char *argv[])
   cout << "Nodelist contains " << nodes.size() << " nodes and " << edges.size() << " edges." << endl;
 
   // ............................................
-  int u = pickUncheckedEdgeIndex(&edges,0);
+  int u = pickUncheckedEdgeIndex(edges,0);
   double progress = 0;
   while (u >= 0) {  // pick edge {a,b} from U as long as there are any
-    try_match(edges[u],&edges,&progress);
-    u = pickUncheckedEdgeIndex(&edges,u);
+    try_match(edges[u],edges,progress);
+    u = pickUncheckedEdgeIndex(edges,u);
   }
   int m = 0;
   for (unsigned int i=0; i<edges.size(); i++) {
@@ -310,7 +307,7 @@ int main(int argc, char *argv[])
 
   // ............................................
   cout << "writing results... ";
-  writeMatching(&edges);
+  writeMatching(edges);
   cout << "done." << endl;
 
   // ............................................
