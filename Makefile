@@ -10,7 +10,7 @@ TARGET = matching_0.2
 all: $(TARGET)
 
 $(TARGET): $(TARGET).cc
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).cc
+	$(CC) $(CFLAGS) -o matching $(TARGET).cc
 
 clean:
 	$(RM) $(TARGET)

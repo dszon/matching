@@ -7,6 +7,7 @@
 #include <vector>
 #include <iomanip>
 #include <algorithm>
+#include <math.h>
 using namespace std;
 
 // enum class checkStatus    { checked,unchecked };
@@ -128,14 +129,13 @@ void progressBar (float progress)
   // cout.flush();
   int barWidth = 70;
   cout << "[";
-  progress = min<float>(1,progress);
   int pos = barWidth * progress;
   for (int i = 0; i < barWidth; ++i) {
     if (i < pos) cout << "=";
     else if (i == pos) cout << ">";
     else cout << " ";
   }
-  cout << "] " << int(progress * 100.0) << " %\r" << flush;
+  cout << "] " << ceil(100.*progress) << " %\r" << flush;
 }
 
 // ---------------------------------------------

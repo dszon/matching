@@ -39,3 +39,6 @@ TXT-Files
 
 Python scripts
 *.py
+
+Attic
+./attic/
