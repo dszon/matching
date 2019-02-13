@@ -289,6 +289,8 @@ int main(int argc, char *argv[])
 // ---------------------------------------------
 {
 
+  // doppelkanten ausschließen
+
   // ............................................
   srand(1);
   time_t start = time(0);
@@ -325,7 +327,7 @@ int main(int argc, char *argv[])
 
   // ............................................
   // Now we enhance the Preis-solution to get a 2/3-optimal solution (Davis and Hourgady)
-  // Set M from the paper is called M here, while Mprime is realized by the inM-Variables in nodes and edges. 
+  // Set M from the paper is called M here, while Mprime is realized by the inM-Variables in nodes and edges.
   cout << "Augmenting matching..." << endl;
   double beta = .8;
   t_edgemap::iterator M_it;
