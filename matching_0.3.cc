@@ -115,15 +115,15 @@ void showStatistics(t_edgemap &M, unsigned int nnodes)
     m++;
     weight += it->second->weight;
   }
-  cout << endl << "Matching contains " << m << " edges and " << (int)(m*2) << " nodes (" << fixed << setprecision(2) << 100*m*2/nnodes << "% matched). " << "Total weight: " << weight << "." << flush << endl;
+  cout << "Matching contains " << m << " edges and " << (int)(m*2) << " nodes (" << fixed << setprecision(2) << 100*m*2/nnodes << "% matched). " << "Total weight: " << weight << "." << flush << endl;
 }
 
 // ---------------------------------------------
-void writeMatching(t_edgelist &edges)
+void writeMatching(string filename, t_edgelist &edges)
 // ---------------------------------------------
 {
   ofstream out;
-  out.open ("graph_matching.txt");
+  out.open(filename);
   for (unsigned int i = 0; i < edges.size(); i++) {
     if (edges[i]->inM == matchingStatus::matched) { // edge is in matching
       out << edges[i]->a->name() << ' ' << edges[i]->b->name() << endl;
@@ -185,6 +185,7 @@ unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_ed
   string        sweight;
   double        weight;
   t_nodelist::iterator itr;
+  bool          alreadyThere;
 
   while(getline(file, line)) {
     stringstream  linestream(line);
@@ -200,11 +201,29 @@ unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_ed
       t_nodelist::iterator itr = nodes.find(node2);
       nodes[node2]->namep = &(itr->first);
     }
-    edge* ep = new edge(nodes[node1],nodes[node2],weight,matchingStatus::free);
-    nodes[node1]->incidentEdges.push_back(ep);
-    nodes[node2]->incidentEdges.push_back(ep);
-    edges.push_back(ep);
-    unchckd[ep] = ep;
+
+    if (false) {
+      // we don't allow double edges or loops
+      alreadyThere = (node1 == node2);
+      if (!alreadyThere) {
+        for (unsigned int i=0; i < nodes[node1]->incidentEdges.size(); i++) {
+          if (((nodes[node1]->incidentEdges)[i]->a->name() == node2) || ((nodes[node1]->incidentEdges)[i]->b->name() == node2)) {
+            alreadyThere = true;
+          }
+        }
+      }
+    } else {
+      alreadyThere = false;
+    }
+
+    if (!alreadyThere) {
+      edge* ep = new edge(nodes[node1],nodes[node2],weight,matchingStatus::free);
+
+      nodes[node1]->incidentEdges.push_back(ep);
+      nodes[node2]->incidentEdges.push_back(ep);
+      edges.push_back(ep);
+      unchckd[ep] = ep;
+    }
   }
 
   cout << "done."  << flush << endl;
@@ -221,7 +240,7 @@ void try_match(edge* ABp, t_edgelist &edges, t_edgemap &unchckd, t_edgemap &M)
 
   float progress = 1 - (float)(unchckd.size())/edges.size();
 
-  if (rand01() > .99) {
+  if (rand01() > .95) {
     progressBar(progress);
   }
 
@@ -280,16 +299,14 @@ void try_match(edge* ABp, t_edgelist &edges, t_edgemap &unchckd, t_edgemap &M)
 // ---------------------------------------------
 void good_beta_augmentation(edge* e, t_edgelist &edges) {
 // ---------------------------------------------
-  node left  = e->a;
-  node right = e->b;
+  // node left  = e->a;
+  // node right = e->b;
 }
 
 // ---------------------------------------------
 int main(int argc, char *argv[])
 // ---------------------------------------------
 {
-
-  // doppelkanten ausschließen
 
   // ............................................
   srand(1);
@@ -300,27 +317,57 @@ int main(int argc, char *argv[])
   t_nodelist    nodes;
   t_edgelist    edges;
   t_edgemap     unchckd, M;
+  double beta = 1;
+  string default_sourcefile = "graph.txt";
+  string sourcefile = default_sourcefile;
+  string default_targetfile = "graph_matching.txt";
+  string targetfile = default_targetfile;
 
-  if( argc != 2 ) {
-    cerr << "Please specify filename" << endl;
-    return 1;
+  for (int i = 0; i < argc; ++i) {
+    if (string(argv[i]) == "--in") {
+      if (i+1 < argc) {
+        sourcefile = argv[++i];
+      } else {
+        std::cerr << "ERROR: Missing filename for input (option --in)." << std::endl;
+        return 1;
+      }
+    } else if (string(argv[i]) == "--out") {
+      if (i+1 < argc) {
+        targetfile = argv[++i];
+      } else {
+        std::cerr << "ERROR: Missing filename for output (option --out)." << std::endl;
+        return 1;
+      }
+    } else if (string(argv[i]) == "--beta") {
+      if (i+1 < argc) {
+        beta = string_to_double(argv[++i]);
+      } else {
+        std::cerr << "ERROR: Missing value for option --beta." << std::endl;
+        return 1;
+      }
+    }
   }
-  string filename = argv[1];
 
   // ............................................
-  cout << "Reading data... " << flush;
-  if (readData(filename,nodes,edges,unchckd)) {
-    return 2;
+  cout << "reading data ";
+  if (sourcefile == default_sourcefile) {
+    cout << "from default location '" << default_sourcefile << "'... " << flush;
+  } else {
+    cout << "from '" << sourcefile << "'... " << flush;
+  }
+  if (readData(sourcefile,nodes,edges,unchckd)) {
+    return 1;
   }
 
   // ............................................
   // Compute a 0.5-optimal solution with linear approximation scheme (Preis)
-  cout << "Computing 0.5-optimal solution... " << endl;
+  cout << "computing 0.5-optimal solution... " << endl;
   edge* ABp;
   while (unchckd.size() > 0) {  // pick edge {a,b} from unchcked as long as there are any
     ABp = unchckd.begin()->second; // choose first edge in list of unchecked edges to test
     try_match(ABp,edges,unchckd,M);
   }
+  cout << endl;
 
   // ............................................
   showStatistics(M,nodes.size());
@@ -328,18 +375,84 @@ int main(int argc, char *argv[])
   // ............................................
   // Now we enhance the Preis-solution to get a 2/3-optimal solution (Davis and Hourgady)
   // Set M from the paper is called M here, while Mprime is realized by the inM-Variables in nodes and edges.
-  cout << "Augmenting matching..." << endl;
-  double beta = .8;
+  cout << "augmenting matching with beta=" << beta << "... " << endl;
+
   t_edgemap::iterator M_it;
+  node* elbow;
+  double real_e;
+  double total_gain = 0;
+  vector <node*> hand(2);
+  vector <edge*> best_upperarm(2);
+  vector <edge*> best_lowerarm(2);
+  int step = 0;
+
   for (M_it = M.begin(); M_it != M.end(); M_it++) { // visiting each edge in M exactly once
-    edge* e = M_it->second;
-    e->a->incidentEdges + e->b->incidentEdges;
+
+    float progress = 1 - (float)(step/M.size());
+    progressBar(progress);
+
+    edge* e  = M_it->second;
+
+    real_e = (int)(e->inM == matchingStatus::matched) * e->weight;
+    vector <double> gain = {0,0};
+    vector <double> real = {0,0};
+    vector <double> alt  = {0,0};
+    vector <node*> shoulders = {e->a,e->b};
+
+    for (unsigned int s=0; s<2; s++) {
+      for (unsigned int ui = 0; ui < shoulders[s]->incidentEdges.size(); ui++) {
+        edge* upperarm = shoulders[s]->incidentEdges[ui];
+        if ((upperarm->inM == matchingStatus::free) && (upperarm != e)) {
+          alt[s]  = upperarm->weight;
+          if (upperarm->a == shoulders[s]) {
+            elbow = upperarm->b;
+          } else {
+            elbow = upperarm->a;
+          }
+          for (unsigned int li = 0; li < elbow->incidentEdges.size(); li++) {
+            edge* lowerarm = elbow->incidentEdges[li];
+            if ((lowerarm->inM == matchingStatus::matched) && (lowerarm != upperarm)) {
+              real[s] = lowerarm->weight;
+              if (alt[s] - beta*real[s] > gain[s]) {
+                gain[s]          = alt[s] - beta*real[s];
+                best_upperarm[s] = upperarm;
+                best_lowerarm[s] = lowerarm;
+                if (lowerarm->a == elbow) {
+                  hand[s] = lowerarm->b;
+                } else {
+                  hand[s] = lowerarm->a;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if ((gain[0] + gain[1] - beta*real_e > 0) && (hand[0] != hand[1])) {
+      e->inM              = matchingStatus::free;
+      best_upperarm[0]->inM  = matchingStatus::matched;
+      best_upperarm[1]->inM = matchingStatus::matched;
+      best_lowerarm[0]->inM  = matchingStatus::free;
+      best_lowerarm[1]->inM = matchingStatus::free;
+      hand[0]->inM = matchingStatus::free;
+      hand[1]->inM = matchingStatus::free;
+      total_gain += gain[0] + gain[1] - real_e;
+    }
+
+    step++;
   }
 
+  cout << endl << "total gain: " << total_gain << endl;
 
   // ............................................
-  cout << "writing results... " << flush;
-  writeMatching(edges);
+  cout << "writing results " << flush;
+  if (targetfile == default_targetfile) {
+    cout << "to default location '" << default_targetfile << "'... " << flush;
+  } else {
+    cout << "to '" << targetfile << "'... " << flush;
+  }
+  writeMatching(targetfile,edges);
   cout << "done."  << flush << endl;
 
   // ............................................
@@ -352,7 +465,7 @@ int main(int argc, char *argv[])
   // ............................................
   time_t end = time(0);
   double time = difftime(end, start);
-  cout << "time total: " << time << " seconds" << endl;
+  cout << "Wall time: " << time << " seconds" << endl;
 
   return 0;
 }
