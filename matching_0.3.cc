@@ -136,8 +136,10 @@ void writeMatching(string filename, t_edgelist &edges)
 void progressBar (float progress)
 // ---------------------------------------------
 {
+  // cerr << round(10000*progress)/100 << endl;
   int barWidth = 70;
   cout << "[";
+  progress = progress - (int)progress;
   int pos = barWidth * progress;
   for (int i = 0; i < barWidth; ++i) {
     if (i < pos) cout << "=";
@@ -194,8 +196,6 @@ unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_ed
     getline(lineStream,node1,',');
     getline(lineStream,node2,',');
     getline(lineStream,sweight,',');
-    // lineStream >> node1 >> node2 >> sweight;
-    // cout << "*" << node1 << "-" << node2 << sweight << endl;
 
     weight = string_to_double(sweight);
     if (nodes.find(node1) == nodes.end()) {
@@ -247,7 +247,7 @@ void try_match(edge* ABp, t_edgelist &edges, t_edgemap &unchckd, t_edgemap &M)
 
   float progress = 1 - (float)(unchckd.size())/edges.size();
 
-  if (rand01() > .95) {
+  if (rand01() > .8) {
     progressBar(progress);
   }
 
@@ -395,7 +395,7 @@ int main(int argc, char *argv[])
 
   for (M_it = M.begin(); M_it != M.end(); M_it++) { // visiting each edge in M exactly once
 
-    float progress = 1 - (float)(step/M.size());
+    float progress = 1. + (float)step/M.size();
     progressBar(progress);
 
     edge* e  = M_it->second;
