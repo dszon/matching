@@ -126,7 +126,7 @@ void writeMatching(string filename, t_edgelist &edges)
   out.open(filename);
   for (unsigned int i = 0; i < edges.size(); i++) {
     if (edges[i]->inM == matchingStatus::matched) { // edge is in matching
-      out << edges[i]->a->name() << ' ' << edges[i]->b->name() << endl;
+      out << edges[i]->a->name() << ',' << edges[i]->b->name() << endl;
     }
   }
   out.close();
@@ -187,7 +187,7 @@ unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_ed
   t_nodelist::iterator itr;
   bool          alreadyThere;
 
-  while(getline(file, line, ' ')) {
+  while(getline(file, line, ',')) {
     stringstream  linestream(line);
     linestream >> node1 >> node2 >> sweight;
     weight = string_to_double(sweight);
@@ -318,9 +318,9 @@ int main(int argc, char *argv[])
   t_edgelist    edges;
   t_edgemap     unchckd, M;
   double beta = 1;
-  string default_sourcefile = "graph.txt";
+  string default_sourcefile = "graph.csv";
   string sourcefile = default_sourcefile;
-  string default_targetfile = "graph_matching.txt";
+  string default_targetfile = "graph_matching.csv";
   string targetfile = default_targetfile;
 
   for (int i = 0; i < argc; ++i) {
