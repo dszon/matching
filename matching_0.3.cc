@@ -187,7 +187,7 @@ unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_ed
   t_nodelist::iterator itr;
   bool          alreadyThere;
 
-  while(getline(file, line)) {
+  while(getline(file, line, ' ')) {
     stringstream  linestream(line);
     linestream >> node1 >> node2 >> sweight;
     weight = string_to_double(sweight);
@@ -443,7 +443,7 @@ int main(int argc, char *argv[])
     step++;
   }
 
-  cout << endl << "total gain: " << total_gain << endl;
+  cout << endl << "total gain: " << total_gain   << endl;
 
   // ............................................
   cout << "writing results " << flush;
