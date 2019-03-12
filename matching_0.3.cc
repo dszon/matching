@@ -126,7 +126,7 @@ void writeMatching(string filename, t_edgelist &edges)
   out.open(filename);
   for (unsigned int i = 0; i < edges.size(); i++) {
     if (edges[i]->inM == matchingStatus::matched) { // edge is in matching
-      out << edges[i]->a->name() << ' ' << edges[i]->b->name() << endl;
+      out << edges[i]->a->name() << ',' << edges[i]->b->name() << endl;
     }
   }
   out.close();
@@ -136,8 +136,10 @@ void writeMatching(string filename, t_edgelist &edges)
 void progressBar (float progress)
 // ---------------------------------------------
 {
+  // cerr << round(10000*progress)/100 << endl;
   int barWidth = 70;
   cout << "[";
+  progress = progress - (int)progress;
   int pos = barWidth * progress;
   for (int i = 0; i < barWidth; ++i) {
     if (i < pos) cout << "=";
@@ -175,6 +177,8 @@ edge* isEdgeUnchecked(edge* ABp, t_edgemap &unchckd, unsigned int pos)
 unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_edgemap &unchckd) {
 // ---------------------------------------------
   ifstream      file(filename);
+  bool          deleteLoops = false;
+
   if( !file ) {
     cerr << "An error occurred when opening file " << filename << endl;
     return 1;
@@ -187,9 +191,12 @@ unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_ed
   t_nodelist::iterator itr;
   bool          alreadyThere;
 
-  while(getline(file, line, ' ')) {
-    stringstream  linestream(line);
-    linestream >> node1 >> node2 >> sweight;
+  while(getline(file, line)) {
+    stringstream  lineStream(line);
+    getline(lineStream,node1,',');
+    getline(lineStream,node2,',');
+    getline(lineStream,sweight,',');
+
     weight = string_to_double(sweight);
     if (nodes.find(node1) == nodes.end()) {
       nodes[node1] = new node(NULL,matchingStatus::free);
@@ -202,8 +209,8 @@ unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_ed
       nodes[node2]->namep = &(itr->first);
     }
 
-    if (false) {
-      // we don't allow double edges or loops
+    // if we don't allow double edges or loops then we delete them here:
+    if (deleteLoops) {
       alreadyThere = (node1 == node2);
       if (!alreadyThere) {
         for (unsigned int i=0; i < nodes[node1]->incidentEdges.size(); i++) {
@@ -240,7 +247,7 @@ void try_match(edge* ABp, t_edgelist &edges, t_edgemap &unchckd, t_edgemap &M)
 
   float progress = 1 - (float)(unchckd.size())/edges.size();
 
-  if (rand01() > .95) {
+  if (rand01() > .8) {
     progressBar(progress);
   }
 
@@ -318,9 +325,9 @@ int main(int argc, char *argv[])
   t_edgelist    edges;
   t_edgemap     unchckd, M;
   double beta = 1;
-  string default_sourcefile = "graph.txt";
+  string default_sourcefile = "graph.csv";
   string sourcefile = default_sourcefile;
-  string default_targetfile = "graph_matching.txt";
+  string default_targetfile = "graph_matching.csv";
   string targetfile = default_targetfile;
 
   for (int i = 0; i < argc; ++i) {
@@ -388,7 +395,7 @@ int main(int argc, char *argv[])
 
   for (M_it = M.begin(); M_it != M.end(); M_it++) { // visiting each edge in M exactly once
 
-    float progress = 1 - (float)(step/M.size());
+    float progress = 1. + (float)step/M.size();
     progressBar(progress);
 
     edge* e  = M_it->second;
