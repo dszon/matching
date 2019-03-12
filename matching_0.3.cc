@@ -133,10 +133,12 @@ void writeMatching(string filename, t_edgelist &edges)
 }
 
 // ---------------------------------------------
-void progressBar (float progress)
+void progressBar (float progress,bool quiet)
 // ---------------------------------------------
 {
-  // cerr << round(10000*progress)/100 << endl;
+  if (quiet) {
+    cerr << round(10000*progress)/100 << endl;
+  }
   int barWidth = 70;
   cout << "[";
   progress = progress - (int)progress;
@@ -174,7 +176,7 @@ edge* isEdgeUnchecked(edge* ABp, t_edgemap &unchckd, unsigned int pos)
 }
 
 // ---------------------------------------------
-unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_edgemap &unchckd) {
+unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_edgemap &unchckd,bool quiet) {
 // ---------------------------------------------
   ifstream      file(filename);
   bool          deleteLoops = false;
@@ -190,12 +192,20 @@ unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_ed
   double        weight;
   t_nodelist::iterator itr;
   bool          alreadyThere;
+  int           linecounter = 0;
 
   while(getline(file, line)) {
     stringstream  lineStream(line);
     getline(lineStream,node1,',');
     getline(lineStream,node2,',');
     getline(lineStream,sweight,',');
+
+    linecounter++;
+    if (linecounter%100 == 0) {
+      if (quiet) {
+        cerr << "E" << linecounter << endl;
+      }
+    }
 
     weight = string_to_double(sweight);
     if (nodes.find(node1) == nodes.end()) {
@@ -240,7 +250,7 @@ unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_ed
 
 
 // ---------------------------------------------
-void try_match(edge* ABp, t_edgelist &edges, t_edgemap &unchckd, t_edgemap &M)
+void try_match(edge* ABp, t_edgelist &edges, t_edgemap &unchckd, t_edgemap &M,bool quiet)
 // ---------------------------------------------
 {
   t_edgelist Ca, Cb;
@@ -248,7 +258,7 @@ void try_match(edge* ABp, t_edgelist &edges, t_edgemap &unchckd, t_edgemap &M)
   float progress = 1 - (float)(unchckd.size())/edges.size();
 
   if (rand01() > .8) {
-    progressBar(progress);
+    progressBar(progress,quiet);
   }
 
   edge*      aXp   = isEdgeUnchecked(ABp,unchckd,0);
@@ -260,7 +270,7 @@ void try_match(edge* ABp, t_edgelist &edges, t_edgemap &unchckd, t_edgemap &M)
       unchckd.erase(aXp);
       Ca.push_back(aXp);
       if (aXp->weight > ABp->weight) {
-        try_match(aXp, edges, unchckd, M);
+        try_match(aXp, edges, unchckd, M,quiet);
       }
     }
 
@@ -268,7 +278,7 @@ void try_match(edge* ABp, t_edgelist &edges, t_edgemap &unchckd, t_edgemap &M)
       unchckd.erase(bXp);
       Cb.push_back(bXp);
       if (bXp->weight > ABp->weight) {
-        try_match(bXp, edges, unchckd, M);
+        try_match(bXp, edges, unchckd, M,quiet);
       }
     }
 
@@ -324,6 +334,7 @@ int main(int argc, char *argv[])
   t_nodelist    nodes;
   t_edgelist    edges;
   t_edgemap     unchckd, M;
+  bool          quiet = false;
   double beta = 1;
   string default_sourcefile = "graph.csv";
   string sourcefile = default_sourcefile;
@@ -352,7 +363,15 @@ int main(int argc, char *argv[])
         std::cerr << "ERROR: Missing value for option --beta." << std::endl;
         return 1;
       }
+    } else if (string(argv[i]) == "-q") {
+      quiet = true;
     }
+  }
+
+  if (quiet) {
+    // streambuf *old = cout.rdbuf();
+    stringstream ss;
+    cout.rdbuf (ss.rdbuf());
   }
 
   // ............................................
@@ -362,7 +381,7 @@ int main(int argc, char *argv[])
   } else {
     cout << "from '" << sourcefile << "'... " << flush;
   }
-  if (readData(sourcefile,nodes,edges,unchckd)) {
+  if (readData(sourcefile,nodes,edges,unchckd,quiet)) {
     return 1;
   }
 
@@ -372,7 +391,7 @@ int main(int argc, char *argv[])
   edge* ABp;
   while (unchckd.size() > 0) {  // pick edge {a,b} from unchcked as long as there are any
     ABp = unchckd.begin()->second; // choose first edge in list of unchecked edges to test
-    try_match(ABp,edges,unchckd,M);
+    try_match(ABp,edges,unchckd,M,quiet);
   }
   cout << endl;
 
@@ -396,7 +415,7 @@ int main(int argc, char *argv[])
   for (M_it = M.begin(); M_it != M.end(); M_it++) { // visiting each edge in M exactly once
 
     float progress = 1. + (float)step/M.size();
-    progressBar(progress);
+    progressBar(progress,quiet);
 
     edge* e  = M_it->second;
 
