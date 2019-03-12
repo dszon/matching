@@ -175,6 +175,8 @@ edge* isEdgeUnchecked(edge* ABp, t_edgemap &unchckd, unsigned int pos)
 unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_edgemap &unchckd) {
 // ---------------------------------------------
   ifstream      file(filename);
+  bool          deleteLoops = false;
+
   if( !file ) {
     cerr << "An error occurred when opening file " << filename << endl;
     return 1;
@@ -187,9 +189,14 @@ unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_ed
   t_nodelist::iterator itr;
   bool          alreadyThere;
 
-  while(getline(file, line, ',')) {
-    stringstream  linestream(line);
-    linestream >> node1 >> node2 >> sweight;
+  while(getline(file, line)) {
+    stringstream  lineStream(line);
+    getline(lineStream,node1,',');
+    getline(lineStream,node2,',');
+    getline(lineStream,sweight,',');
+    // lineStream >> node1 >> node2 >> sweight;
+    // cout << "*" << node1 << "-" << node2 << sweight << endl;
+
     weight = string_to_double(sweight);
     if (nodes.find(node1) == nodes.end()) {
       nodes[node1] = new node(NULL,matchingStatus::free);
@@ -202,8 +209,8 @@ unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_ed
       nodes[node2]->namep = &(itr->first);
     }
 
-    if (false) {
-      // we don't allow double edges or loops
+    // if we don't allow double edges or loops then we delete them here:
+    if (deleteLoops) {
       alreadyThere = (node1 == node2);
       if (!alreadyThere) {
         for (unsigned int i=0; i < nodes[node1]->incidentEdges.size(); i++) {
