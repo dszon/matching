@@ -14,7 +14,7 @@ filename1 is a comma separated csv containing an edge list of the graph. Option 
 `nodeA,nodeC,weight`  
 `...`  
 
-where nodeA and nodeB are the node-IDs and weight is a float describing the edge weight.
+where nodeA, nodeB,... are the node-IDs and weight is a float.
 
 filename2 is the list of the edges in a 2/3-optimal matching. The algorithm tries to maximize the sum of the weights.
 
