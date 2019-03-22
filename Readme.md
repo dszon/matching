@@ -10,11 +10,11 @@ Run with
 
 filename1 is a comma separated csv containing an edge list of the graph. Option [-q] sqitches to silent output (only percentage of progress). Input format:
 
-`nodeA,nodeB,weight`  
-`nodeA,nodeC,weight`  
+`nodeA,nodeB,weightAB`  
+`nodeA,nodeC,weightAC`  
 `...`  
 
-where nodeA, nodeB,... are the node-IDs and weight is a float.
+where nodeA, nodeB,... are the node-IDs and the weights are floats.
 
 filename2 is the list of the edges in a 2/3-optimal matching. The algorithm tries to maximize the sum of the weights.
 
