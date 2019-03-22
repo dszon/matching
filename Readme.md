@@ -10,9 +10,9 @@ Run with
 
 filename1 is a comma separated csv containing an edge list of the graph. Option [-q] sqitches to silent output (only percentage of progress). Input format:
 
-`nodeA,nodeB,weight`
-`nodeA,nodeC,weight`
-`...`
+`nodeA,nodeB,weight`  
+`nodeA,nodeC,weight`  
+`...`  
 
 where nodeA and nodeB are the node-IDs and weight is a float describing the edge weight.
 
