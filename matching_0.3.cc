@@ -189,6 +189,8 @@ unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_ed
   string        node1;
   string        node2;
   string        sweight;
+  // string        aweight;
+  // string        eventId;
   double        weight;
   t_nodelist::iterator itr;
   bool          alreadyThere;
@@ -199,6 +201,8 @@ unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_ed
     getline(lineStream,node1,',');
     getline(lineStream,node2,',');
     getline(lineStream,sweight,',');
+    // getline(lineStream,aweight,',');
+    // getline(lineStream,eventId,',');
 
     linecounter++;
     if (linecounter%100 == 0) {
@@ -398,6 +402,7 @@ int main(int argc, char *argv[])
   // ............................................
   showStatistics(M,nodes.size());
 
+
   // ............................................
   // Now we enhance the Preis-solution to get a 2/3-optimal solution (Davis and Hourgady)
   // Set M from the paper is called M here, while Mprime is realized by the inM-Variables in nodes and edges.
@@ -470,7 +475,7 @@ int main(int argc, char *argv[])
   }
 
   cout << endl << "total gain: " << total_gain   << endl;
-
+  */
   // ............................................
   cout << "writing results " << flush;
   if (targetfile == default_targetfile) {
