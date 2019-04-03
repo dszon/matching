@@ -402,7 +402,7 @@ int main(int argc, char *argv[])
   // ............................................
   showStatistics(M,nodes.size());
 
-
+  /*
   // ............................................
   // Now we enhance the Preis-solution to get a 2/3-optimal solution (Davis and Hourgady)
   // Set M from the paper is called M here, while Mprime is realized by the inM-Variables in nodes and edges.
