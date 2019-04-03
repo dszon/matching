@@ -105,6 +105,22 @@ void showGraph(t_nodelist* nodesp, int bound)
 }
 
 // ---------------------------------------------
+void test(t_edgelist &edges, t_nodelist &nodes)
+// ---------------------------------------------
+{
+  for (unsigned int i = 0; i < edges.size(); i++) {
+    cout << edges[i]->a->name() << ',' << edges[i]->b->name() << endl;
+    for (unsigned int j = 0; j < edges[i]->a->incidentEdges.size(); j++) {
+      cout << "  a: " << edges[i]->a->incidentEdges[j]->a->name() << ',' << edges[i]->a->incidentEdges[j]->b->name() << endl;
+    }
+    for (unsigned int j = 0; j < edges[i]->b->incidentEdges.size(); j++) {
+      cout << "  b: " << edges[i]->b->incidentEdges[j]->a->name() << ',' << edges[i]->b->incidentEdges[j]->b->name() << endl;
+    }
+  }
+}
+
+
+// ---------------------------------------------
 void showStatistics(t_edgemap &M, unsigned int nnodes)
 // ---------------------------------------------
 {
@@ -389,6 +405,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
+
   // ............................................
   // Compute a 0.5-optimal solution with linear approximation scheme (Preis)
   cout << "computing 0.5-optimal solution... " << endl;
@@ -400,21 +417,17 @@ int main(int argc, char *argv[])
   cout << endl;
 
   // ............................................
-  showStatistics(M,nodes.size());
+  // showStatistics(M,nodes.size());
 
-  /*
-  // ............................................
+  // writeMatching("test.csv",edges);
+
+    // ............................................
   // Now we enhance the Preis-solution to get a 2/3-optimal solution (Davis and Hourgady)
   // Set M from the paper is called M here, while Mprime is realized by the inM-Variables in nodes and edges.
   cout << "augmenting matching with beta=" << beta << "... " << endl;
 
   t_edgemap::iterator M_it;
-  node* elbow;
-  double real_e;
   double total_gain = 0;
-  vector <node*> hand(2);
-  vector <edge*> best_upperarm(2);
-  vector <edge*> best_lowerarm(2);
   int step = 0;
 
   for (M_it = M.begin(); M_it != M.end(); M_it++) { // visiting each edge in M exactly once
@@ -424,58 +437,91 @@ int main(int argc, char *argv[])
 
     edge* e  = M_it->second;
 
-    real_e = (int)(e->inM == matchingStatus::matched) * e->weight;
-    vector <double> gain = {0,0};
-    vector <double> real = {0,0};
-    vector <double> alt  = {0,0};
-    vector <node*> shoulders = {e->a,e->b};
+    if (e->inM == matchingStatus::matched) {
 
-    for (unsigned int s=0; s<2; s++) {
-      for (unsigned int ui = 0; ui < shoulders[s]->incidentEdges.size(); ui++) {
-        edge* upperarm = shoulders[s]->incidentEdges[ui];
-        if ((upperarm->inM == matchingStatus::free) && (upperarm != e)) {
-          alt[s]  = upperarm->weight;
-          if (upperarm->a == shoulders[s]) {
-            elbow = upperarm->b;
-          } else {
-            elbow = upperarm->a;
-          }
-          for (unsigned int li = 0; li < elbow->incidentEdges.size(); li++) {
-            edge* lowerarm = elbow->incidentEdges[li];
-            if ((lowerarm->inM == matchingStatus::matched) && (lowerarm != upperarm)) {
-              real[s] = lowerarm->weight;
-              if (alt[s] - beta*real[s] > gain[s]) {
-                gain[s]          = alt[s] - beta*real[s];
-                best_upperarm[s] = upperarm;
-                best_lowerarm[s] = lowerarm;
-                if (lowerarm->a == elbow) {
-                  hand[s] = lowerarm->b;
-                } else {
-                  hand[s] = lowerarm->a;
+      double real_e = e->weight;
+
+      node* elbow;
+      vector <node*> best_elbow(2);
+      vector <node*> best_hand(2);
+      vector <edge*> best_upperarm(2);
+      vector <edge*> best_lowerarm(2);
+      vector <double> gain = {0,0};
+      vector <double> real = {0,0};
+      vector <double> alt  = {0,0};
+      vector <node*> shoulders = {e->a,e->b};
+
+      for (unsigned int s=0; s<2; s++) {
+        for (unsigned int ui = 0; ui < shoulders[s]->incidentEdges.size(); ui++) {
+          edge* upperarm = shoulders[s]->incidentEdges[ui];
+          if ((upperarm->inM == matchingStatus::free) && (upperarm != e)) {
+            alt[s]  = upperarm->weight;
+            if (upperarm->a == shoulders[s]) {
+              elbow = upperarm->b;
+            } else {
+              elbow = upperarm->a;
+            }
+            for (unsigned int li = 0; li < elbow->incidentEdges.size(); li++) {
+              edge* lowerarm = elbow->incidentEdges[li];
+              if ((lowerarm->inM == matchingStatus::matched) && (lowerarm != upperarm)) {
+                real[s] = lowerarm->weight;
+                if (alt[s] - beta*real[s] > gain[s]) {
+                  gain[s]          = alt[s] - beta*real[s];
+                  best_upperarm[s] = upperarm;
+                  best_lowerarm[s] = lowerarm;
+                  best_elbow[s]    = elbow;
+                  if (lowerarm->a == elbow) {
+                    best_hand[s] = lowerarm->b;
+                  } else {
+                    best_hand[s] = lowerarm->a;
+                  }
                 }
               }
             }
           }
         }
       }
-    }
 
-    if ((gain[0] + gain[1] - beta*real_e > 0) && (hand[0] != hand[1])) {
-      e->inM              = matchingStatus::free;
-      best_upperarm[0]->inM  = matchingStatus::matched;
-      best_upperarm[1]->inM = matchingStatus::matched;
-      best_lowerarm[0]->inM  = matchingStatus::free;
-      best_lowerarm[1]->inM = matchingStatus::free;
-      hand[0]->inM = matchingStatus::free;
-      hand[1]->inM = matchingStatus::free;
-      total_gain += gain[0] + gain[1] - real_e;
+      // if ((gain[0] + gain[1] - beta*real_e > 0) && (hand[0] != hand[1])) {
+      if ((gain[0] != 0) && (gain[1] != 0) && (gain[0] + gain[1] - beta*real_e > 0) && (best_elbow[0] != best_elbow[1]) && (best_hand[0] != best_hand[1])) {
+        e->inM              = matchingStatus::free;
+        best_upperarm[0]->inM  = matchingStatus::matched;
+        best_upperarm[1]->inM = matchingStatus::matched;
+        best_lowerarm[0]->inM  = matchingStatus::free;
+        best_lowerarm[1]->inM = matchingStatus::free;
+        best_hand[0]->inM = matchingStatus::free;
+        best_hand[1]->inM = matchingStatus::free;
+        total_gain += gain[0] + gain[1] - real_e;
+        // cout << "------------------------------------------" << endl;
+        // cout << "out: e:               " << e->a->name() << " - " << e->b->name() << endl;
+        // cout << "shoulder 0:           " << shoulders[0]->name()  << endl;
+        // cout << "shoulder 1:           " << shoulders[1]->name()  << endl;
+        // cout << "in:  best_upperarm 0: " << best_upperarm[0]->a->name() << " - " << best_upperarm[0]->b->name() << endl;
+        // cout << "in:  best_upperarm 1: " << best_upperarm[1]->a->name() << " - " << best_upperarm[1]->b->name() << endl;
+        // cout << "elbow 0:              " << best_elbow[0]->name()  << endl;
+        // cout << "elbow 1:              " << best_elbow[1]->name()  << endl;
+        // cout << "out: best_lowerarm 0: " << best_lowerarm[0]->a->name() << " - " << best_lowerarm[0]->b->name() << endl;
+        // cout << "out: best_lowerarm 1: " << best_lowerarm[1]->a->name() << " - " << best_lowerarm[1]->b->name() << endl;
+        // cout << "hand 0:               " << best_hand[0]->name()  << endl;
+        // cout << "hand 1:               " << best_hand[1]->name()  << endl;
+        // cout << "------------------------------------------" << endl;
+        // for (unsigned int s=0; s<2; s++) {
+        //   for (unsigned int ui = 0; ui < shoulders[s]->incidentEdges.size(); ui++) {
+        //     // edge* upperarm = shoulders[s]->incidentEdges[ui];
+        //     cout << "   " << shoulders[s]->incidentEdges[ui]->a->name() << "," << shoulders[s]->incidentEdges[ui]->b->name() << endl;
+        //   }
+        // }
+      }
     }
 
     step++;
   }
 
+  // ............................................
+  showStatistics(M,nodes.size());
+
   cout << endl << "total gain: " << total_gain   << endl;
-  */
+
   // ............................................
   cout << "writing results " << flush;
   if (targetfile == default_targetfile) {
