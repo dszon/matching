@@ -228,6 +228,12 @@ unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_ed
     }
 
     weight = string_to_double(sweight);
+
+    // hack for edges with weight == 0
+    if (weight == 0) {
+      weight = 1;
+    }
+
     if (nodes.find(node1) == nodes.end()) {
       nodes[node1] = new node(NULL,matchingStatus::free);
       itr = nodes.find(node1);
@@ -238,6 +244,7 @@ unsigned int readData(string filename,t_nodelist &nodes, t_edgelist &edges, t_ed
       t_nodelist::iterator itr = nodes.find(node2);
       nodes[node2]->namep = &(itr->first);
     }
+
 
     // if we don't allow double edges or loops then we delete them here:
     if (deleteLoops) {
@@ -344,6 +351,7 @@ void good_beta_augmentation(edge* e, t_edgelist &edges) {
 int main(int argc, char *argv[])
 // ---------------------------------------------
 {
+  string version = "0.3c";
 
   // ............................................
   srand(1);
@@ -385,6 +393,9 @@ int main(int argc, char *argv[])
       }
     } else if (string(argv[i]) == "-q") {
       quiet = true;
+    } else if (string(argv[i]) == "--version") {
+      cout << version << endl;
+      return 0;
     }
   }
 
